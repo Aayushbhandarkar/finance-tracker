@@ -37,7 +37,7 @@ const AddTransaction = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/transactions', {
+      await axios.post('https://finance-tracker-backend-afpg.onrender.com', {
         ...formData,
         amount: parseFloat(formData.amount)
       }, {
