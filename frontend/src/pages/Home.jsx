@@ -11,10 +11,9 @@ const Home = () => {
     fetchTransactions();
   }, []);
 
-  // Fetch transactions from backend
   const fetchTransactions = async () => {
     try {
-      const response = await axios.get('https://finance-tracker-backend-afpg.onrender.com/api/transactions');
+      const response = await axios.get(https://finance-tracker-backend-afpg.onrender.com');
       setTransactions(response.data);
       setLoading(false);
     } catch (error) {
@@ -23,17 +22,6 @@ const Home = () => {
     }
   };
 
-  // Add new transaction
-  const addTransaction = async (transactionData) => {
-    try {
-      const response = await axios.post('https://finance-tracker-backend-afpg.onrender.com/api/transactions', transactionData);
-      setTransactions(prev => [response.data, ...prev]); // Add new transaction to list
-    } catch (error) {
-      console.error('Error adding transaction:', error);
-    }
-  };
-
-  // Analytics calculation
   const calculateAnalytics = () => {
     const incomeTransactions = transactions.filter(t => t.type === 'income');
     const expenseTransactions = transactions.filter(t => t.type === 'expense');
@@ -197,10 +185,7 @@ const Home = () => {
       <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
           <h2 className="text-2xl font-bold text-white">Recent Transactions</h2>
-          <button
-            onClick={() => addTransaction({ type: 'income', category: 'Misc', amount: 0 })} 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
             Add Transaction
           </button>
         </div>
