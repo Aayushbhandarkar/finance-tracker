@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai'; // 👈 added
+import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai'; 
 
 const Signup = () => {
   const [formData, setFormData] = useState({
