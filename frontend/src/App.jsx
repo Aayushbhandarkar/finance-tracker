@@ -9,6 +9,10 @@ import DeleteTransaction from './pages/DeleteTransaction';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
+
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'https://finance-tracker-backend-afpg.onrender.com';
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
