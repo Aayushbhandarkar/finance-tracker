@@ -21,7 +21,7 @@ const EditTransaction = () => {
   const fetchTransaction = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/transactions`, {
+      const response = await axios.get(`https://finance-tracker-backend-afpg.onrender.com`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const transaction = response.data.find(t => t._id === id);
