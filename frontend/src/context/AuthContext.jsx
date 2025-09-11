@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
@@ -24,10 +23,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('https://finance-tracker-backend-afpg.onrender.com', {
-        email,
-        password
-      });
+      const response = await axios.post(
+        'https://finance-tracker-backend-afpg.onrender.com/api/auth/login',
+        { email, password }
+      );
 
       const { token, user } = response.data;
 
@@ -47,11 +46,10 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await axios.post('https://finance-tracker-backend-afpg.onrender.com', {
-        name,
-        email,
-        password
-      });
+      const response = await axios.post(
+        'https://finance-tracker-backend-afpg.onrender.com/api/auth/register',
+        { name, email, password }
+      );
 
       const { token, user } = response.data;
 
@@ -76,16 +74,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    register,
-    logout
-  };
+  const value = { user, login, register, logout };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
