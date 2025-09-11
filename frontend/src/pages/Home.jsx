@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import TransactionList from '../components/TransactionList';
 
+
+axios.defaults.baseURL = 'https://finance-tracker-backend-afpg.onrender.com';
+
 const Home = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +16,8 @@ const Home = () => {
 
   const fetchTransactions = async () => {
     try {
-      const response = await axios.get('https://finance-tracker-backend-afpg.onrender.com');
+     
+      const response = await axios.get('/api/transactions');
       setTransactions(response.data);
       setLoading(false);
     } catch (error) {
