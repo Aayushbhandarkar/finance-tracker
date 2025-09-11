@@ -1,171 +1,145 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import TransactionList from '../components/TransactionList';
-import AddTransaction from './AddTransaction';
+import { useNavigate } from 'react-router-dom';
 
-const Home = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false); // toggle AddTransaction form
-  const [timeRange, setTimeRange] = useState('all');
+const AddTransaction = () => {
+  const [formData, setFormData] = useState({
+    title: '',
+    amount: '',
+    category: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
-  const fetchTransactions = async () => {
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = 'Title is required';
+    if (!formData.amount) newErrors.amount = 'Amount is required';
+    if (isNaN(formData.amount)) newErrors.amount = 'Amount must be a number';
+    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.date) newErrors.date = 'Date is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        'https://finance-tracker-backend-afpg.onrender.com/api/transactions',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setTransactions(response.data);
-      setLoading(false);
+      await axios.post('http://localhost:5000/api/transactions', {
+        ...formData,
+        amount: parseFloat(formData.amount)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      navigate('/');
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setLoading(false);
+      console.error('Error adding transaction:', error);
     }
   };
 
-  const handleAddTransactionSuccess = () => {
-    setShowAddForm(false); // close the form
-    fetchTransactions();   // refresh transactions
-  };
-
-  const calculateAnalytics = () => {
-    const incomeTransactions = transactions.filter(t => t.type === 'income');
-    const expenseTransactions = transactions.filter(t => t.type === 'expense');
-
-    const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const balance = totalIncome - totalExpenses;
-    const totalTransactions = transactions.length;
-    const totalTurnover = totalIncome + Math.abs(totalExpenses);
-
-    const categoryWiseIncome = {};
-    const categoryWiseExpense = {};
-
-    incomeTransactions.forEach(t => {
-      categoryWiseIncome[t.category] = (categoryWiseIncome[t.category] || 0) + t.amount;
-    });
-
-    expenseTransactions.forEach(t => {
-      categoryWiseExpense[t.category] = (categoryWiseExpense[t.category] || 0) + t.amount;
-    });
-
-    return {
-      totalIncome,
-      totalExpenses: Math.abs(totalExpenses),
-      balance,
-      totalTransactions,
-      totalTurnover,
-      categoryWiseIncome,
-      categoryWiseExpense
-    };
-  };
-
-  const {
-    totalIncome,
-    totalExpenses,
-    balance,
-    totalTransactions,
-    totalTurnover,
-    categoryWiseIncome,
-    categoryWiseExpense
-  } = calculateAnalytics();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading your finances...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-900 p-4 sm:p-6 space-y-6 sm:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Finance Dashboard</h1>
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="all">All Time</option>
-          <option value="week">Last Week</option>
-          <option value="month">This Month</option>
-          <option value="year">This Year</option>
-        </select>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Total Income */}
-        <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg">
-          <h3 className="text-lg font-semibold text-green-400">Total Income</h3>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-2">${totalIncome.toFixed(2)}</p>
-          <div className="w-full bg-gray-700 h-2 mt-4 rounded-full">
-            <div
-              className="bg-green-500 h-2 rounded-full"
-              style={{ width: `${totalIncome > 0 ? Math.min(100, (totalIncome/(totalIncome+totalExpenses))*100) : 0}%` }}
-            ></div>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-700">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8 text-center tracking-wide">Add New Transaction</h2>
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1 sm:mb-2">Title</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className={`w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-700 border ${errors.title ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200`}
+              placeholder="Enter transaction title"
+            />
+            {errors.title && <p className="mt-1 text-sm text-red-400">{errors.title}</p>}
           </div>
-        </div>
 
-        {/* Total Expenses */}
-        <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg">
-          <h3 className="text-lg font-semibold text-red-400">Total Expenses</h3>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-2">${totalExpenses.toFixed(2)}</p>
-          <div className="w-full bg-gray-700 h-2 mt-4 rounded-full">
-            <div
-              className="bg-red-500 h-2 rounded-full"
-              style={{ width: `${totalExpenses > 0 ? Math.min(100, (totalExpenses/(totalIncome+totalExpenses))*100) : 0}%` }}
-            ></div>
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1 sm:mb-2">Amount</label>
+            <input
+              type="number"
+              name="amount"
+              step="0.01"
+              value={formData.amount}
+              onChange={handleChange}
+              className={`w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-700 border ${errors.amount ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200`}
+              placeholder="0.00"
+            />
+            {errors.amount && <p className="mt-1 text-sm text-red-400">{errors.amount}</p>}
           </div>
-        </div>
 
-        {/* Total Transactions */}
-        <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg">
-          <h3 className="text-lg font-semibold text-blue-400">Total Transactions</h3>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-2">{totalTransactions}</p>
-        </div>
-
-        {/* Balance */}
-        <div className={`bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg ${balance >= 0 ? 'border-green-500' : 'border-red-500'}`}>
-          <h3 className={`text-lg font-semibold ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>Balance</h3>
-          <p className={`text-2xl sm:text-3xl font-bold mt-2 ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>${balance.toFixed(2)}</p>
-        </div>
-      </div>
-
-      {/* Add Transaction Button */}
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          Add Transaction
-        </button>
-      </div>
-
-      {/* Show AddTransaction Form */}
-      {showAddForm && <AddTransaction onSuccess={handleAddTransactionSuccess} />}
-
-      {/* Transactions List */}
-      <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg overflow-x-auto">
-        <h2 className="text-2xl font-bold text-white mb-4">Recent Transactions</h2>
-        {transactions.length > 0 ? (
-          <TransactionList transactions={transactions} />
-        ) : (
-          <div className="text-center py-6 text-gray-400">
-            <p className="text-xl">No transactions found</p>
-            <p className="mt-2">Add your first transaction to get started!</p>
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1 sm:mb-2">Category</label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className={`w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-700 border ${errors.category ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200`}
+            >
+              <option value="" className="text-gray-400">Select a category</option>
+              <option value="Salary" className="text-gray-800">Salary</option>
+              <option value="Freelance" className="text-gray-800">Freelance</option>
+              <option value="Investment" className="text-gray-800">Investment</option>
+              <option value="Food" className="text-gray-800">Food</option>
+              <option value="Transport" className="text-gray-800">Transport</option>
+              <option value="Entertainment" className="text-gray-800">Entertainment</option>
+              <option value="Shopping" className="text-gray-800">Shopping</option>
+              <option value="Healthcare" className="text-gray-800">Healthcare</option>
+              <option value="Education" className="text-gray-800">Education</option>
+              <option value="Other" className="text-gray-800">Other</option>
+            </select>
+            {errors.category && <p className="mt-1 text-sm text-red-400">{errors.category}</p>}
           </div>
-        )}
+
+          {/* Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1 sm:mb-2">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              className={`w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-700 border ${errors.date ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200`}
+            />
+            {errors.date && <p className="mt-1 text-sm text-red-400">{errors.date}</p>}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 sm:px-5 py-2 sm:py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-semibold focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              Add Transaction
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex-1 px-4 sm:px-5 py-2 sm:py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-semibold focus:ring-4 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
-export default Home;
+export default AddTransaction;
