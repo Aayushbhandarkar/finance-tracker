@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import TransactionList from '../components/TransactionList';
 import { useAuth } from '../context/AuthContext'; 
 
@@ -8,6 +9,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('all');
   const { user } = useAuth(); 
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTransactions();
@@ -20,6 +22,11 @@ const Home = () => {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
       const response = await axios.get(`${API_BASE_URL}/api/transactions`, {
         headers: { 
           Authorization: `Bearer ${token}` 
@@ -30,6 +37,12 @@ const Home = () => {
     } catch (error) {
       console.error('Error fetching transactions:', error);
       setLoading(false);
+      
+      // Check if it's an authentication error (401 Unauthorized)
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
     }
   };
 
@@ -38,10 +51,10 @@ const Home = () => {
     const expenseTransactions = transactions.filter(t => t.type === 'expense');
 
     const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const balance = totalIncome - totalExpenses;
     const totalTransactions = transactions.length;
-    const totalTurnover = totalIncome + Math.abs(totalExpenses);
+    const totalTurnover = totalIncome + totalExpenses;
 
     const categoryWiseIncome = {};
     const categoryWiseExpense = {};
@@ -51,12 +64,12 @@ const Home = () => {
     });
 
     expenseTransactions.forEach(t => {
-      categoryWiseExpense[t.category] = (categoryWiseExpense[t.category] || 0) + t.amount;
+      categoryWiseExpense[t.category] = (categoryWiseExpense[t.category] || 0) + Math.abs(t.amount);
     });
 
     return {
       totalIncome,
-      totalExpenses: Math.abs(totalExpenses),
+      totalExpenses,
       balance,
       totalTransactions,
       totalTurnover,
@@ -196,7 +209,10 @@ const Home = () => {
       <div className="bg-gray-800 p-4 sm:p-6 rounded-xl border border-gray-700 shadow-lg overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
           <h2 className="text-2xl font-bold text-white">Recent Transactions</h2>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/add')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
             Add Transaction
           </button>
         </div>
