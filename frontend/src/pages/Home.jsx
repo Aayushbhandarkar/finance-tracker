@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import TransactionList from '../components/TransactionList';
+import { useAuth } from '../context/AuthContext'; 
 
 const Home = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('all');
+  const { user } = useAuth(); 
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
+  const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : 'https://finance-tracker-backend-afpg.onrender.com';
+
   const fetchTransactions = async () => {
     try {
-      const response = await axios.get('https://finance-tracker-backend-afpg.onrender.com');
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/api/transactions`, {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        }
+      });
       setTransactions(response.data);
       setLoading(false);
     } catch (error) {
