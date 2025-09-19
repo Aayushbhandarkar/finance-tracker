@@ -11,10 +11,12 @@ const Home = () => {
   const { user } = useAuth(); 
   const navigate = useNavigate();
 
+  
   useEffect(() => {
     fetchTransactions();
   }, []);
 
+  
   const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : 'https://finance-tracker-backend-afpg.onrender.com';
